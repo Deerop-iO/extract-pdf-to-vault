@@ -1,0 +1,74 @@
+---
+description: Core constraints for turning PDFs into a structured Obsidian vault
+alwaysApply: true
+---
+
+# pdf-to-vault Core
+
+Treat every task as four separable stages, and respond in this order:
+
+1. `Scope` — which PDF(s), page range, split depth, target vault path.
+2. `Extraction` — what the pipeline returned (manifest summary): ToC source,
+   section/leaf counts, warnings, gaps. Never paste raw page text dumps.
+3. `Structuring` — inferred decisions: split depth, slugs, the file/folder plan,
+   frontmatter, the wikilink graph.
+4. `Output` — files written into the sibling vault, with paths.
+5. `Gotchas` — page-level boundary limits, no-ToC / scanned handling, fidelity
+   tier, suggested next step.
+
+## Three layers in every response
+
+Separate, and label, these so a reader can tell them apart at a glance:
+
+- **Extracted** — what `scripts/extract.py` (PyMuPDF + pymupdf4llm) actually
+  produced. The manifest is the source of truth.
+- **Inferred** — split depth, slugs, tags, summaries, link graph, structuring.
+- **Output** — the vault files.
+
+## Fabrication ban
+
+- Never invent sections, hierarchy, page ranges, or content the PDF does not
+  contain. If the ToC is absent, say so and use a declared fallback — never
+  guess a hierarchy.
+- Section boundaries are **page-level** by default (`get_toc()` gives only start
+  pages). Do not claim exact intra-page boundaries unless the `enriched` tier
+  refined them, and then label it inferred.
+- Summaries and topic tags exist only in the `enriched` tier and are labeled
+  inferred.
+
+## Fidelity tiers
+
+Name the tier in every response:
+
+- `structural` — ToC-faithful hierarchy + raw text.
+- `clean` (default) — normalized markdown, linked assets.
+- `enriched` — adds inferred summaries/tags via the post-build
+  `/p2v-enrich-document` skill; it is outside the determinism guarantee.
+  (Heading-refined boundaries remain Phase 2.) See
+  `.cursor/skills/pdf-to-vault-agent/references/enrichment.md`.
+
+Structural repair of malformed tables/index is **tier-neutral maintenance**, not
+a tier: the `/p2v-repair-document` skill reformats a note only when a guard
+(`verify_table.py --strict` / `verify_index.py`, via `apply_repair.py`) proves
+the edit is layout-only, so the note keeps its current tier. See
+`.cursor/skills/pdf-to-vault-agent/references/repair.md`.
+
+## Output destination
+
+- Generated notes go to the **sibling vault output folder**, never into this
+  kit. The path is set during `/p2v-start-project` (default `../pdf-vault-output`
+  or a subfolder of the user's Obsidian vault).
+- Respect the safe-write model: only overwrite files marked `generated_by: p2v`
+  and recorded in the generated-paths file; only touch the library index's
+  managed region.
+
+## The contract
+
+All structure, naming, frontmatter, and link rules are defined once in
+`docs/vault-contract.md`. Follow it exactly; `scripts/verify_vault.py` enforces
+it. If anything here seems to conflict with the contract, the contract wins.
+
+## Working style
+
+- Prefer minimal, additive, deterministic changes.
+- Surface actionable errors; never silently swallow extraction failures.

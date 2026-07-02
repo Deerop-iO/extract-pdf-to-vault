@@ -1,0 +1,28 @@
+---
+description: Capture PDF images/assets into the vault, never fabricate or leave transient refs
+alwaysApply: true
+---
+
+# Assets
+
+Images extracted from the PDF are real assets. Capture them; never invent a
+placeholder or leave a non-portable reference.
+
+## Rules
+
+- `extract.py` writes images to a staging dir and replaces each markdown image
+  reference with an `ASSET:<basename>` sentinel in the manifest (portable, no
+  machine-specific paths).
+- `build_vault.py` copies referenced assets into the per-PDF `assets/` folder and
+  resolves each sentinel to a **note-relative** path (`../assets/...` as needed
+  for nested notes).
+- Asset filenames are the extractor's deterministic page-based names. Do not
+  rename them ad hoc (it would desync the markdown references).
+- The harness fails the build if a note references an image that does not exist
+  on disk, or if any `ASSET:`/`http(s)://` reference survives into the vault.
+
+## Forbidden
+
+- Substituting a fabricated/placeholder image for a real extracted asset.
+- Leaving an `ASSET:` sentinel or an absolute/staging path in a generated note.
+- Referencing an asset that was not copied into the vault.

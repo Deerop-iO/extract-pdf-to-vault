@@ -1,0 +1,10 @@
+# pdf-to-vault pipeline dependencies.
+# Versions are pinned so the "same input -> same output" determinism guarantee
+# (vault-contract.md section 7) holds. Bump deliberately, then re-run the kit's
+# tests and a smoke build before committing the new pins.
+PyMuPDF==1.27.2.3
+pymupdf4llm==1.27.2.3
+PyYAML==6.0.2
+
+# Optional, only needed if you enable OCR for scanned PDFs (Phase 2):
+# ocrmypdf==16.4.3

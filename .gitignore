@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Environment
+.env
+
+# Pipeline working dirs / generated output (never live in the kit)
+.p2v/
+pdf-vault-output/
+*.manifest.json
+*.generated.json
+
+# clean_existing_vault.py maintenance tool: patterns may carry PII (e.g. an
+# ownership watermark with an email); reports/backups are run artifacts.
+*.patterns
+tools/*-report.json
+tools/*-backup/

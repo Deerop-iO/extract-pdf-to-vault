@@ -1,0 +1,25 @@
+---
+description: Use Context7 as ground truth for PyMuPDF, pymupdf4llm, and Obsidian
+alwaysApply: true
+---
+
+# Context7 First
+
+When working with PyMuPDF, pymupdf4llm, or Obsidian behavior, consult Context7
+before relying on memory.
+
+## Ground-truth domains
+
+- PyMuPDF document/ToC/image APIs (`get_toc`, `metadata`, image extraction).
+- pymupdf4llm `to_markdown` options (`page_chunks`, `write_images`,
+  `image_path`) and the page-chunk return shape.
+- Obsidian markdown conventions (wikilinks, frontmatter/properties) where a code
+  detail depends on them.
+
+## Discipline
+
+- Verify exact tool/option names and return shapes against Context7 before
+  prescribing pipeline changes.
+- Cite resolved library IDs (see `docs/context7-index.md`), not free-text names.
+- If Context7 cannot resolve a dependency, note it in `docs/context7-index.md`
+  and fall back to first-party docs.

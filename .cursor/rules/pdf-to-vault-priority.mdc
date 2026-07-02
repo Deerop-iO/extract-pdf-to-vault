@@ -1,0 +1,23 @@
+---
+description: Conflict-resolution order for pdf-to-vault rules
+alwaysApply: true
+---
+
+# Rule Priority
+
+Apply rules in this order. Higher wins on conflict.
+
+1. **Extraction fidelity** — never fabricate what the pipeline did not return.
+2. **Scope discipline** — confirm PDF, range, split depth, and vault path before
+   writing.
+3. **Structure & naming contract** — `docs/vault-contract.md` is the single
+   source of truth for folders, filenames, frontmatter, and links.
+4. **Safe-write** — never clobber user-authored notes; only edit the library
+   index managed region.
+5. **Vault/Obsidian conventions** — frontmatter, wikilinks, MOCs.
+6. **Enrichment ergonomics** — summaries/tags only in the `enriched` tier,
+   labeled inferred.
+7. **Context7 verification** — confirm PyMuPDF / pymupdf4llm / Obsidian details
+   against current docs before prescribing patterns.
+
+Never trade extraction fidelity or the naming contract for convenience.

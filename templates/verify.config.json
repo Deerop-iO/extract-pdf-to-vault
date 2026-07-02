@@ -1,0 +1,17 @@
+{
+  "gates": {
+    "frontmatter": true,
+    "filenames": true,
+    "links": true,
+    "assets": true,
+    "reachability": true,
+    "tables": true,
+    "boilerplate": true
+  },
+  "boilerplate_patterns": [],
+  "_comments": {
+    "tables": "Flags markdown tables whose data rows disagree on column count (the validated junk signal -- e.g. a page number leaked in as an extra column). It deliberately does NOT flag all-empty rows (blank form fields) or single-cell numeric rows (point-total subtotals), which are legitimate.",
+    "boilerplate": "No-op until boilerplate_patterns is non-empty. Then it fails when any pattern still matches a note body.",
+    "boilerplate_patterns": "Regex strings the boilerplate gate checks for. Mirror the list from pipeline.config.json so the gate catches anything the extractor's normalization missed. Example: [\"\\\\*\\\\*This ebook belongs to .*?\\\\*\\\\*\"]."
+  }
+}

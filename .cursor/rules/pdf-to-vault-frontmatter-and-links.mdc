@@ -1,0 +1,64 @@
+---
+description: Frontmatter schema and wikilink consistency for vault notes
+alwaysApply: true
+---
+
+# Frontmatter & Links
+
+The schema and link style are defined in `docs/vault-contract.md` (sections 3,
+4, 6). This rule states the discipline.
+
+## Frontmatter
+
+- Every generated note carries the contract's keys, in the contract's order,
+  including `generated_by: p2v` (the ownership marker). Unused optional fields
+  are omitted, never `null`.
+- `tags` always begins with `pdf-import` and the source slug. Inferred topic
+  tags (enriched tier) are appended, never substituted.
+- Use the deterministic writer in `scripts/lib/frontmatter.py`; do not hand-emit
+  YAML with a different key order or quoting.
+
+## Enrichment (enriched tier, `/p2v-enrich-document`)
+
+- Enrichment is **inferred, labeled, additive, and outside the determinism
+  guarantee**. It adds an optional one-line `summary` (a faithful condensation of
+  the note's own body — fabrication ban) and appended `topic/*` + `enriched`
+  tags; it never edits `source`/pages/structure.
+- Write enrichment ONLY through `scripts/apply_enrichment.py` (which wraps the
+  deterministic writer and enforces safe-write) — never hand-edit the YAML.
+- Topic tags come from the library-scoped controlled vocabulary
+  (`topic-tags.json`), so they stay consistent across books.
+
+## Content repair (tier-neutral, `/p2v-repair-document`)
+
+- Structural repair of a malformed table or glued index is a separate,
+  tier-neutral skill — it edits the body, not frontmatter, and adds no inferred
+  content, so a repaired note keeps its current tier.
+- A body repair is allowed only when a deterministic guard proves the edit is
+  layout-only: write it through `scripts/apply_repair.py` (which enforces
+  safe-write, runs `table_guard.data_drift_strict` / `index_guard.data_drift`,
+  and for tables also asserts non-table prose is byte-identical). A failing edit
+  is refused and flagged, never applied. `verify_table.py --strict` /
+  `verify_index.py` run the same guards standalone for previewing.
+
+## Wikilinks (the consistency twin)
+
+- Internal links are **vault-relative and aliased**:
+  `[[<source-slug>/<path>/<number>-<slug>|<display title>]]`.
+- **Bare links are forbidden** (`[[basename]]`) — they break when basenames
+  repeat. The only permitted bare target is the root `index`.
+- `prev`/`next` walk the ordered leaf sequence; `parent` points to the enclosing
+  folder note (or the library index, for the per-PDF MOC). Folder-note MOCs omit
+  `prev`/`next`.
+
+## Library index
+
+- The vault-root `index.md` is co-owned: only the region between
+  `<!-- p2v:auto-start -->` and `<!-- p2v:auto-end -->` is rewritten. Preserve
+  everything else.
+
+## Forbidden
+
+- Bare or unaliased internal wikilinks.
+- Reordering/renaming frontmatter keys, or omitting `generated_by`.
+- Rewriting anything outside the library index managed region.

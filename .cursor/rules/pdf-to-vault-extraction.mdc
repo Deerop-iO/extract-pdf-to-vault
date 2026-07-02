@@ -1,0 +1,45 @@
+---
+description: The Python pipeline is the source of truth for PDF extraction
+alwaysApply: true
+---
+
+# Extraction
+
+`scripts/extract.py` (PyMuPDF `get_toc()` + pymupdf4llm `to_markdown`) is the
+**only** extraction source. Do not substitute screenshots, copy-paste, or model
+guesses for what the pipeline returns.
+
+## Required flow
+
+1. Confirm scope and the target vault path.
+2. Run `extract.py` -> `.p2v/<slug>.manifest.json`. This is the source of truth.
+3. Summarize the manifest (ToC source, section/leaf counts, warnings) — do not
+   dump raw page text into chat.
+4. Run `build_vault.py` to write the vault from the manifest.
+5. Run `verify_vault.py` and report the result.
+
+Stages are separable: extraction never writes into the vault; building never
+re-opens the PDF (it reads only the manifest).
+
+## No-ToC and scanned PDFs
+
+- If `doc.get_toc()` is empty, stop and report it. Offer the declared fallbacks
+ (`--fallback headings` for a flat, page-level hierarchy from detected headings,
+ or `--fallback pages` for one note per page). Both are opt-in; never invent a
+ hierarchy or pick a fallback silently.
+- If extracted text is below `min_text_chars`, treat the PDF as scanned/image-
+  only and stop. OCR is opt-in via config, never automatic.
+
+## Determinism
+
+- Determinism is scoped to "same input PDF + pinned dependency versions"
+  (`templates/requirements.txt`). Keep the `lib/` helpers pure.
+
+See `.cursor/skills/pdf-to-vault-agent/references/extraction.md` and
+`docs/extraction-manifest.md`.
+
+## Forbidden
+
+- Accepting a partial/empty extraction as complete.
+- Fabricating sections, page ranges, or content.
+- Silently OCR-ing or guessing a hierarchy.

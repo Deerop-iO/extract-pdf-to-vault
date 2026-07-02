@@ -1,0 +1,35 @@
+---
+description: Folder layout and deterministic file naming for the vault
+alwaysApply: true
+---
+
+# Structure & Naming
+
+The full contract is `docs/vault-contract.md`. This rule states the discipline;
+it does not restate the algorithm.
+
+## Non-negotiables
+
+- One folder per PDF; nested folders mirror ToC depth; one note per ToC leaf.
+- Branch sections use the **folder-note convention** (a note named after its own
+  folder), so every section basename is unique. The only `index.md` in the vault
+  is the single vault-root library index.
+- Filenames are `<derived-toc-number>-<slug>.md`. The ToC number is **positional**
+  (derived from sibling order, zero-padded), never parsed from the title text —
+  so preface/appendix/unnumbered entries still get stable numbers.
+- Slugify is the pure function in `scripts/lib/slugify.py`. Do not invent a
+  different slugging scheme.
+
+## Discipline
+
+- Do not hand-name files in a way that diverges from `compute_paths`
+  (`scripts/lib/naming.py`). If you need a different layout, change the contract
+  and the harness together, not one note ad hoc.
+- Keep the structure deterministic: the same manifest must always yield the same
+  paths.
+
+## Forbidden
+
+- A second `index.md` anywhere.
+- Bare or title-parsed numbering.
+- Diverging from the slug algorithm or the folder-note convention.
