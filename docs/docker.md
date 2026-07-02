@@ -100,6 +100,58 @@ Not:
 
 ---
 
+## Sharing with colleagues
+
+### Default: share the repo (recommended)
+
+Point colleagues at the GitHub repo. They clone, build the image once, and copy
+`docker-run.sh` into their project folder:
+
+```bash
+git clone https://github.com/Deerop-iO/extract-pdf-to-vault.git
+cd extract-pdf-to-vault
+docker build -t p2v .
+```
+
+Then follow the **Every-day use** section above. No registry account needed; the
+`Dockerfile` and pinned `templates/requirements.txt` keep builds consistent.
+
+### Optional: export the built image (offline / no registry)
+
+On your machine after `docker build -t p2v .`:
+
+```bash
+docker save p2v -o p2v.tar
+```
+
+Send `p2v.tar` to a colleague. They load it with:
+
+```bash
+docker load -i p2v.tar
+```
+
+Then they use `docker-run.sh` as usual. Re-export when you publish a new kit
+version.
+
+### Optional: publish to a registry (no local build for colleagues)
+
+Tag and push to Docker Hub or GitHub Container Registry, then colleagues pull
+instead of building:
+
+```bash
+docker tag p2v yourorg/p2v:1.0.1
+docker push yourorg/p2v:1.0.1
+
+# Colleague:
+docker pull yourorg/p2v:1.0.1
+docker tag yourorg/p2v:1.0.1 p2v
+```
+
+The kit does not publish a pre-built image by default; maintainers opt in to a
+registry if they want pull-only onboarding.
+
+---
+
 ## Troubleshooting
 
 **"Cannot connect to the Docker daemon"** — Docker Desktop is not running.

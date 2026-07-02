@@ -27,7 +27,7 @@ PDF --extract.py--> manifest.json --build_vault.py--> Obsidian vault --verify_va
 
 ## Repository map
 
-- `AGENTS.md` / `CLAUDE.md` — the agent charter. Auto-loaded by Codex and Claude Code respectively; paste into Cursor chat to brief the agent. `USE_THIS.md` redirects here.
+- `AGENTS.md` / `CLAUDE.md` — the agent charter. Auto-loaded by Codex and Claude Code respectively; paste `AGENTS.md` into Cursor chat to brief the agent.
 - `.cursor/rules/` — always-on discipline (7 `.mdc` files).
 - `.cursor/skills/pdf-to-vault-agent/` — router `SKILL.md`, `references/`, and
   `workflows/` (the `/p2v-*` slash commands for Cursor).

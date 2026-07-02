@@ -5,6 +5,11 @@ explicitly requested.
 
 ## [Unreleased]
 
+### Changed
+- Removed `USE_THIS.md`; `AGENTS.md` is the sole agent charter entry point.
+- `docs/docker.md`: added **Sharing with colleagues** (repo clone + build, optional
+  `docker save`/`load`, optional registry push).
+
 ### Added
 - **Docker support (`v1.0.1`):** colleagues can now run the pipeline without
   installing Python or a venv. New files: `Dockerfile` (Python 3.11-slim, pinned
