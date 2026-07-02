@@ -6,6 +6,17 @@ explicitly requested.
 ## [Unreleased]
 
 ### Added
+- **Docker support (`v1.0.1`):** colleagues can now run the pipeline without
+  installing Python or a venv. New files: `Dockerfile` (Python 3.11-slim, pinned
+  deps, subcommand entrypoint), `docker-entrypoint.sh` (maps `extract` / `build`
+  / `verify` / `enrich` / `repair` to the correct scripts), `docker-run.sh`
+  (volume-mount wrapper), `.dockerignore` (deny-all, allows only `templates/`).
+  `docs/docker.md` explains setup for Docker novices, including the kit-folder
+  vs. project-folder distinction and the vault-path constraint. All five workflow
+  skills updated with `# With Docker:` command alternatives. `README.md`,
+  `AGENTS.md`, and `CLAUDE.md` note the Docker option.
+
+### Added (agent traversal — v1.0.0 polish)
 - **Heading-based splitting for no-ToC PDFs (`--fallback headings`):** when a PDF
   has no embedded table of contents, extraction can now reconstruct a flat,
   page-level hierarchy from the markdown heading lines pymupdf4llm's layout

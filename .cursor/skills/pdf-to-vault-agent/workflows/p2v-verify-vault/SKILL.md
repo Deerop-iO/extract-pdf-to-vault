@@ -17,6 +17,10 @@ Check that a generated vault still satisfies the contract.
    ```
    python scripts/verify_vault.py --vault "<vault_output>" --config verify.config.json
    ```
+   With Docker:
+   ```
+   ./docker-run.sh verify --vault "<vault_output>" --config verify.config.json
+   ```
 
 3. **Report.**
    - On PASS: state which gates ran.

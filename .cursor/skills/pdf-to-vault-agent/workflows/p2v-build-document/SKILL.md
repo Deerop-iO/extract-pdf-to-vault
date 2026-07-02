@@ -11,9 +11,12 @@ has scaffolded the pipeline; if not, run that first.
 
 ## Preconditions
 
-- The output project has `scripts/`, `pipeline.config.json`, and an installed
-  venv (PyMuPDF, pymupdf4llm, PyYAML).
+- The output project has `pipeline.config.json` and either:
+  - a venv with PyMuPDF, pymupdf4llm, PyYAML installed (`scripts/` scaffolded), or
+  - the Docker image built (`docker build -t p2v .` from the kit folder).
 - You have a path to the source PDF and a `vault_output` in the config.
+- If using Docker: `vault_output` must be a path inside the project folder
+  (e.g. `./my-vault`), not `../something`.
 
 ## Steps
 
@@ -24,6 +27,10 @@ has scaffolded the pipeline; if not, run that first.
 2. **Extract.** Run:
    ```
    python scripts/extract.py "<pdf>" --out "<.p2v dir>" --config pipeline.config.json
+   ```
+   With Docker:
+   ```
+   ./docker-run.sh extract "<pdf>" --out "<.p2v dir>" --config pipeline.config.json
    ```
    Supported flags (append to the command as needed):
    - `--fallback toc|headings|pages` — hierarchy fallback when no embedded ToC.
@@ -51,12 +58,20 @@ has scaffolded the pipeline; if not, run that first.
    ```
    python scripts/build_vault.py "<.p2v dir>/<slug>.manifest.json" --vault "<vault_output>"
    ```
+   With Docker:
+   ```
+   ./docker-run.sh build "<.p2v dir>/<slug>.manifest.json" --vault "<vault_output>"
+   ```
    If it refuses to overwrite a user-authored file, stop and report the path —
    do not delete the user's note.
 
 5. **Verify (blocking).** Run:
    ```
    python scripts/verify_vault.py --vault "<vault_output>" --config verify.config.json
+   ```
+   With Docker:
+   ```
+   ./docker-run.sh verify --vault "<vault_output>" --config verify.config.json
    ```
    If any gate fails, fix the cause (usually a contract/pipeline issue) and
    re-run. Do not hand-edit generated notes to pass the gate.

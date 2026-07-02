@@ -1,0 +1,9 @@
+# Deny everything, then allow only what the Docker build actually needs.
+*
+
+# Allow the pipeline dependencies and scripts
+!templates/
+!templates/**
+
+# Allow the entrypoint
+!docker-entrypoint.sh

@@ -41,12 +41,21 @@ Everything this skill writes is **inferred** -- keep it visibly separate from
      python scripts/apply_enrichment.py "<note>" \
        --summary "<one-line summary>" --add-tags "topic/x,topic/y,enriched"
      ```
+     With Docker:
+     ```
+     ./docker-run.sh enrich "<note>" \
+       --summary "<one-line summary>" --add-tags "topic/x,topic/y,enriched"
+     ```
    - Idempotent: `apply_enrichment.py` skips a note that already has a `summary`
      unless you pass `--force`.
 
-3. **Re-verify.** Run `python scripts/verify_vault.py --vault "<vault>" --config
-   verify.config.json`; it must stay PASS. The summary shape is checked by the
-   frontmatter gate.
+3. **Re-verify.** Run:
+   ```
+   python scripts/verify_vault.py --vault "<vault>" --config verify.config.json
+   ```
+   With Docker: `./docker-run.sh verify --vault "<vault>" --config verify.config.json`
+
+   It must stay PASS. The summary shape is checked by the frontmatter gate.
 
 4. **Report (Extracted / Inferred / Output).**
    - *Inferred:* notes summarized, tags added (and any new vocabulary terms).

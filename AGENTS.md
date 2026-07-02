@@ -15,6 +15,7 @@ Core discipline:
 - The extraction pipeline (`scripts/extract.py`, PyMuPDF + pymupdf4llm) is the
   **source of truth**. Never fabricate content, sections, or structure the PDF
   does not contain.
+- A Docker image is available as a no-Python-install alternative (`docker build -t p2v .`); see `docs/docker.md`.
 - Everything about folder layout, file naming, frontmatter, and wikilinks is
   defined once in [`docs/vault-contract.md`](docs/vault-contract.md). Follow it
   exactly; the verification harness enforces it.

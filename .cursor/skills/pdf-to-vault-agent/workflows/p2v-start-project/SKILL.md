@@ -32,10 +32,16 @@ kit.
      `_templates/`, `.env.example`
    Do not copy into the kit directory.
 
-5. **Install dependencies.** In the output project, create a venv and
-   `pip install -r requirements.txt`. Confirm `python -c "import fitz,
-   pymupdf4llm, yaml"` succeeds. If a pinned wheel is unavailable for the user's
-   Python, install the latest and update the pins (note the change).
+5. **Install dependencies.** Choose one option:
+   - **Python (venv):** In the output project, create a venv and
+     `pip install -r requirements.txt`. Confirm `python -c "import fitz,
+     pymupdf4llm, yaml"` succeeds. If a pinned wheel is unavailable for the user's
+     Python, install the latest and update the pins (note the change).
+   - **Docker (no Python needed):** From the kit folder, build the image once:
+     `docker build -t p2v .` — then use `docker-run.sh` for every command.
+     Vault output paths in `pipeline.config.json` must stay inside the project
+     folder (use `./pdf-vault-output`, not `../pdf-vault-output`).
+     See `docs/docker.md` for the full walkthrough.
 
 6. **Create default map (AskQuestion).** Offer to scaffold the empty vault
    skeleton now:

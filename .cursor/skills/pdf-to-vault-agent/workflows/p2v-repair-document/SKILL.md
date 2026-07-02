@@ -47,6 +47,8 @@ stays `clean`. (For summaries + topic tags, use `/p2v-enrich-document`.)
      ```
      python scripts/apply_repair.py "<note>" --kind table --new-body "<after.md>"
      ```
+     With Docker: `./docker-run.sh repair "<note>" --kind table --new-body "<after.md>"`
+
      For a demoted benefit-table header (`|Selections||| / sep / |Available|…|Cost|`),
      the built-in transform promotes the real header row and emits the group title
      as prose above the table:
@@ -57,6 +59,7 @@ stays `clean`. (For summaries + topic tags, use `/p2v-enrich-document`.)
      ```
      python scripts/apply_repair.py "<note>" --kind index --new-body "<after.md>"
      ```
+     With Docker: `./docker-run.sh repair "<note>" --kind index --new-body "<after.md>"`
    - Exit 0 = applied (frontmatter preserved, body replaced). Exit 1 = refused or
      data drift -- **do not** hand-edit around it; flag the note for human review.
      An ugly-but-correct table beats a pretty-but-wrong one.
@@ -66,8 +69,13 @@ stays `clean`. (For summaries + topic tags, use `/p2v-enrich-document`.)
      before.md after.md --strict` / `scripts/verify_index.py before.md after.md`
      run the same guards standalone.
 
-4. **Re-verify.** Run `python scripts/verify_vault.py --vault "<vault>" --config
-   verify.config.json`. The `[tables]` gate must now pass; the vault stays PASS.
+4. **Re-verify.** Run:
+   ```
+   python scripts/verify_vault.py --vault "<vault>" --config verify.config.json
+   ```
+   With Docker: `./docker-run.sh verify --vault "<vault>" --config verify.config.json`
+
+   The `[tables]` gate must now pass; the vault stays PASS.
 
 5. **Report (Extracted / Inferred / Output).**
    - *Output:* tables fixed vs flagged, index notes fixed vs flagged.
