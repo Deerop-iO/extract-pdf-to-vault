@@ -7,8 +7,9 @@ explicitly requested.
 
 ### Changed
 - Removed `USE_THIS.md`; `AGENTS.md` is the sole agent charter entry point.
-- `docs/docker.md`: added **Sharing with colleagues** (repo clone + build, optional
-  `docker save`/`load`, optional registry push).
+- **`DOCKER.md`:** full Docker installation and usage guide at repo root (quick
+  start, prerequisites, architecture, verification, agent integration, sharing,
+  security, troubleshooting, platform notes).
 
 ### Added
 - **Docker support (`v1.0.1`):** colleagues can now run the pipeline without
@@ -16,7 +17,7 @@ explicitly requested.
   deps, subcommand entrypoint), `docker-entrypoint.sh` (maps `extract` / `build`
   / `verify` / `enrich` / `repair` to the correct scripts), `docker-run.sh`
   (volume-mount wrapper), `.dockerignore` (deny-all, allows only `templates/`).
-  `docs/docker.md` explains setup for Docker novices, including the kit-folder
+  `DOCKER.md` explains setup for Docker novices, including the kit-folder
   vs. project-folder distinction and the vault-path constraint. All five workflow
   skills updated with `# With Docker:` command alternatives. `README.md`,
   `AGENTS.md`, and `CLAUDE.md` note the Docker option.

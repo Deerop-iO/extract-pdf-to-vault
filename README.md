@@ -33,10 +33,11 @@ PDF --extract.py--> manifest.json --build_vault.py--> Obsidian vault --verify_va
   `workflows/` (the `/p2v-*` slash commands for Cursor).
 - `.claude/commands/` — `/p2v-*` slash commands for Claude Code (mirror of the Cursor workflows).
 - `docs/` — human-facing specs. **`vault-contract.md` is the single source of
-  truth** for structure and naming. `docker.md` covers the Docker setup.
+  truth** for structure and naming.
+- `DOCKER.md` — Docker installation and usage guide (no Python required).
+- `Dockerfile` / `docker-entrypoint.sh` / `docker-run.sh` — Docker support.
 - `templates/` — the Python pipeline + config, copied into the sibling vault
   project by `/p2v-start-project`.
-- `Dockerfile` / `docker-entrypoint.sh` / `docker-run.sh` — Docker support; see `docs/docker.md`.
 - `tests/` — exercises the `lib/` helpers that ship in `templates/scripts/lib/`.
 - `tools/` — development and maintenance artifacts (test vault snapshots, verify
   reports, `clean_existing_vault.py`). Not required to run the pipeline; most
@@ -62,8 +63,8 @@ vault). Never write generated notes into this kit directory.
 
 **Option B — Docker (no Python install needed):** Docker Desktop installed and
 running. Build the image once from the kit folder: `docker build -t p2v .` —
-then use `docker-run.sh` for every pipeline command. See `docs/docker.md` for
-the full walkthrough.
+then use `docker-run.sh` for every pipeline command. See [`DOCKER.md`](DOCKER.md)
+for the full installation and usage guide.
 
 ## Status
 

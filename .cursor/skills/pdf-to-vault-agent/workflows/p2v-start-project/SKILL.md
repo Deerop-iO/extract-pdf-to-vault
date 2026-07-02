@@ -41,7 +41,7 @@ kit.
      `docker build -t p2v .` — then use `docker-run.sh` for every command.
      Vault output paths in `pipeline.config.json` must stay inside the project
      folder (use `./pdf-vault-output`, not `../pdf-vault-output`).
-     See `docs/docker.md` for the full walkthrough.
+     See `DOCKER.md` for the full walkthrough.
 
 6. **Create default map (AskQuestion).** Offer to scaffold the empty vault
    skeleton now:
