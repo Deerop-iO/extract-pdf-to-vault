@@ -1,9 +1,11 @@
 # pdf-to-vault agent kit
 
-A Cursor agent kit that deterministically extracts PDFs into a structured
-Obsidian markdown vault. Modeled on the `figma-to-code` kit: always-on rules, a
-router skill, explicit slash-command workflows, a copy-out template pipeline,
-and a consistency-verification harness.
+**Repository:** https://github.com/Deerop-iO/extract-pdf-to-vault · **Latest release:** `v1.0.1`
+
+An agent kit for **Cursor** and **Claude Code** that deterministically extracts
+PDFs into a structured Obsidian markdown vault. Modeled on the `figma-to-code`
+kit: always-on rules, a router skill, explicit slash-command workflows, a
+copy-out template pipeline, and a consistency-verification harness.
 
 The PDF table of contents drives a nested folder/file structure with stable,
 deterministic naming, so the same PDF always produces the same vault.
@@ -35,7 +37,7 @@ PDF --extract.py--> manifest.json --build_vault.py--> Obsidian vault --verify_va
 - `docs/` — human-facing specs. **`vault-contract.md` is the single source of
   truth** for structure and naming.
 - `DOCKER.md` — Docker installation and usage guide (no Python required).
-- `Dockerfile` / `docker-entrypoint.sh` / `docker-run.sh` — Docker support.
+- `Dockerfile` / `docker-entrypoint.sh` / `docker-run.sh` / `.dockerignore` — Docker support.
 - `templates/` — the Python pipeline + config, copied into the sibling vault
   project by `/p2v-start-project`.
 - `tests/` — exercises the `lib/` helpers that ship in `templates/scripts/lib/`.
@@ -49,12 +51,21 @@ The kit holds *how to extract*. Generated notes go into a **sibling vault output
 folder** (default `../pdf-vault-output`, or a subfolder of your real Obsidian
 vault). Never write generated notes into this kit directory.
 
+When using **Docker**, set `vault_output` to a path inside your project folder
+(e.g. `./pdf-vault-output`), not `../…` — see [`DOCKER.md`](DOCKER.md).
+
 ## Quick start
 
 1. Run `/p2v-start-project` to choose a vault path, scaffold the pipeline, and
    optionally create the default vault map.
 2. Run `/p2v-build-document` and point it at a PDF.
 3. Run `/p2v-verify-vault` to confirm consistency.
+
+Optional post-build (same slash commands in Cursor and Claude Code):
+
+- `/p2v-enrich-document` — add faithful summaries and controlled topic tags
+  (`enriched` tier).
+- `/p2v-repair-document` — guard-gated table/index layout repair (tier-neutral).
 
 ## Requirements
 
@@ -68,5 +79,7 @@ for the full installation and usage guide.
 
 ## Status
 
-Phase 1 (working end-to-end pipeline) is implemented. See `BACKLOG.md` and
-`DEFERRED.md` for Phase 2 (enrichment, OCR, more workflows).
+The core pipeline (extract → build → verify) is stable. Post-build **enrich** and
+**repair** skills ship today; Docker support is in `v1.0.1`. Remaining work —
+OCR for scanned PDFs, heading-refined boundaries, refresh/orchestrator workflows
+— is tracked in `BACKLOG.md` (see `DEFERRED.md` for the high-level defer list).
