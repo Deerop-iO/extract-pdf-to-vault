@@ -14,6 +14,14 @@
   "table_strategy": "lines_strict",
   "strip_page_numbers": true,
   "boilerplate_patterns": [],
+  "sources": {
+    "necromunda-halls-of-the-ancients": { "reformat_equipment_lists": true },
+    "necromunda-house-of-blades":       { "reformat_equipment_lists": true },
+    "necromunda-house-of-iron":         { "table_strategy": "text", "reformat_stat_blocks": true, "reformat_equipment_lists": true },
+    "necromunda-house-of-chains":       { "reformat_equipment_lists": true },
+    "necromunda-house-of-faith":        { "reformat_equipment_lists": true },
+    "necromunda-house-of-artifice":     { "reformat_equipment_lists": true }
+  },
   "_comments": {
     "vault_output": "Where the Obsidian vault is written. Set by /p2v-start-project.",
     "layout": "'nested' (default): branch sections are folders, leaf sections are files. 'uniform': every section is its own folder note, so Obsidian's file explorer (which always lists folders before files) shows sections in ToC order.",
@@ -30,6 +38,8 @@
     "strip_page_numbers": "clean/enriched tiers only. Drop *standalone* page-number lines (a whole line that is only a page number), bounded by the document's page count so a real number larger than the page count is kept. Table rows are NEVER removed by this: a single-cell numeric row may be a point-total subtotal, and an all-empty row may be a blank form field.",
     "boilerplate_patterns": "clean/enriched tiers only. List of regex strings for injected boilerplate that is NOT header/footer furniture -- e.g. a DRM ownership line stamped into the body and table cells. A line that is only boilerplate is dropped; a fragment is excised in place (and the line is dropped only if excision left nothing but furniture). The only table row removal is a row we emptied ourselves via excision. Example: [\"\\\\*\\\\*This ebook belongs to .*?\\\\*\\\\*\"].",
     "sources": "Optional per-source overrides, keyed by source_slug. Each value is a partial config merged over the global one once the slug is known, so a single shared config can give one PDF its own boilerplate_patterns / tier / split_depth / table_strategy without affecting the others. Note: slug_max_len is used to derive source_slug before the merge, so overriding it per-source has no effect on the slug. Example: { \"necromunda-...\": { \"table_strategy\": \"text\" } }.",
+    "reformat_stat_blocks": "Opt-in per source. Converts run-on Necromunda stat profiles (name + 12 characteristic values on one line, separated by the canonical header row) into proper markdown tables. Requires table_strategy 'text' on most Necromunda PDFs so the values aren't already detected as a table.",
+    "reformat_equipment_lists": "Opt-in per source. Converts Necromunda equipment bullet lists (dotted-leader, multi-item concatenated, split-continuation) into '| Item | Cost |' markdown tables. Only tablifies runs where every bullet ends with a cost (\\d+ credits$, anchored); narrative bullets with credits mid-sentence are left untouched. Three artefact types are handled: dotted leaders (all books), inline-merged adjacent-column items (House books), and split-mid-word continuations (Halls of the Ancients).",
     "fix_heading_spaces": "Opt-in per source (off by default; set via the 'sources' map). Repairs headings whose display font omits the inter-word space glyph, so the extractor returns a glued run like 'RESOLVEHITS'. Uses PyMuPDF glyph geometry to reinsert a space on a heading line only where the inter-glyph gap exceeds heading_space_gap_ratio * font_size -- geometry only, never adds/alters a glyph, and applied only to markdown heading lines. Verify per source: fonts with loose intra-word kerning (e.g. Frostgrave's 'g') can over-split, so enable only where it helps.",
     "heading_space_gap_ratio": "Gap threshold (fraction of font size) above which fix_heading_spaces inserts a word space. Default 0.08 is conservative; lower is more aggressive and risks splitting real words.",
     "write_images": "Off by default. Set true to extract and embed PDF images (figures, diagrams, screenshots) into the manifest. Most PDFs contain only repeated decorative elements (logos, page headers) that add no signal for an AI-agent workflow; enable per source via the 'sources' map for PDFs whose figures carry real content. Can also be enabled at runtime with the --write-images CLI flag without changing this file.",

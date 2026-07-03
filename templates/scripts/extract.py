@@ -61,6 +61,7 @@ from lib.text import (  # noqa: E402
     clean_block,
     normalize_body,
     reformat_stat_profiles,
+    reformat_equipment_lists,
     merge_wrapped_table_rows,
     promote_header_below_separator,
     promote_demoted_label_row,
@@ -517,6 +518,8 @@ def extract(
                 text = apply_heading_space_map(text, heading_space_map)
             if cfg.get("reformat_stat_blocks"):
                 text = reformat_stat_profiles(text)
+            if cfg.get("reformat_equipment_lists"):
+                text = reformat_equipment_lists(text)
             # Structural table normalizers run as one guarded group: snapshot the
             # text first, apply the gated rules in order, then assert no data-row
             # token drifted (fabrication guard). reformat_stat_profiles is above

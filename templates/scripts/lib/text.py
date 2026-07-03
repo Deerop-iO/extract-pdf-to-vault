@@ -331,6 +331,22 @@ _STAT_PROFILES = [
 _STAT_VALUE = re.compile(r'^(?:\d+["\u201d]|\d+\+|\d+|-)\*?$')
 _DOTTED_LEADER = re.compile(r"\.{3,}")
 
+# Equipment list normalizer.
+# Cost anchored to end-of-line (after stripping trailing whitespace): the
+# critical false-positive guard.  Matches "15 credits" or "+15 credits" ONLY
+# when the cost is the last thing on the line AND the digit is not preceded by
+# an alphanumeric character (guards against "2D6x10 credits" where the "10"
+# is part of a dice expression).  Rejects mid-sentence uses such as
+# "2D6x10 credits worth of weapons" where "credits" is not at line-end.
+_EQUIP_COST = re.compile(r"(?<![A-Za-z\d])(\+?\d+)\s*(credits)\s*$", re.I)
+# Non-anchored cost fragment with the same lookbehind guard (prevents matching
+# "10" inside "2D6x10 credits" which is a dice-expression, not a price).
+_COST_FRAGMENT = re.compile(r"(?<![A-Za-z\d])\+?\d+\s*credits", re.I)
+# Stray bullet characters that appear inside equipment list item text.
+_EQUIP_BULLET = re.compile(r"^[•*]\s*")
+# Temporary null-byte separator inserted during Pass 2 splitting.
+_SPLIT_SEP = "\x00"
+
 
 def reformat_stat_profiles(text: str) -> str:
     """Reformat run-on Necromunda stat profiles into markdown tables.
@@ -385,6 +401,247 @@ def reformat_stat_profiles(text: str) -> str:
             out.append("")
             out.append(suffix)
     return _BLANK_RUN.sub("\n\n", "\n".join(out))
+
+
+def reformat_equipment_lists(text: str) -> str:
+    """Convert Necromunda equipment bullet lists into ``| Item | Cost |`` tables.
+
+    Equipment lists in Necromunda PDFs suffer from three extraction artefacts:
+
+    1. **Dotted leaders** -- ``- Autogun......15 credits`` (all books).
+    2. **Inline-merged items** -- ``- Boltgun....55 credits - Master-crafted....+15 credits``
+       (House books; pymupdf4llm flattens adjacent-column layouts).
+    3. **Split-mid-word continuations** -- ``- Ironhead heavy`` followed by
+       ``- flamer*....210 credits`` (Halls of the Ancients; column-break mid-word).
+
+    The function runs four passes and converts qualifying bullet blocks into
+    ``| Item | Cost |`` markdown tables.  Upgrade lines (cost starts with ``+``)
+    become ``| — Name | +cost |`` sub-rows.
+
+    A bullet block is **only tablified when every line ends with a cost**
+    (``\\d+ credits$``, anchored).  Any block containing a line where
+    ``credits`` appears mid-sentence (house favours, sub-plots, scenario
+    roll-tables) is left entirely untouched -- this is the false-positive guard.
+
+    Idempotent and conservative: lines already starting with ``|`` or ``#``
+    pass through untouched.  Pure; no I/O.
+    """
+    if not text or "credits" not in text.lower():
+        return text
+
+    lines = text.split("\n")
+
+    # -------------------------------------------------------------------
+    # Pass 1 -- Split multi-item concatenated lines.
+    #
+    # A line with more than one cost fragment is split at each
+    # "cost + whitespace + next-item-start" boundary.  Bare (non-"- ")
+    # result fragments are prefixed with "- ".
+    #
+    # Splitting before joining is required for the Halls of the Ancients
+    # case where a continuation bullet itself contains a concatenated item:
+    #   "- flamer*...210 credits Ironhead heavy" must be split into
+    #   "- flamer*...210 credits" and "- Ironhead heavy" BEFORE Pass 2
+    #   can see "- Ironhead heavy" as a clean joiner for the previous line.
+    # -------------------------------------------------------------------
+    split_lines: List[str] = []
+    for line in lines:
+        stripped = line.rstrip()
+        if stripped.startswith("|") or stripped.startswith("#"):
+            split_lines.append(line)
+            continue
+        cost_count = len(_COST_FRAGMENT.findall(stripped))
+        has_end_cost = bool(_EQUIP_COST.search(stripped))
+        # Split when multiple cost fragments (inline merge), OR when there is
+        # exactly one cost fragment that is NOT at line-end (the HotA case:
+        # "flamer*...210 credits Ironhead heavy" -- cost is mid-line, not last).
+        if not (cost_count >= 2 or (cost_count == 1 and not has_end_cost)):
+            split_lines.append(line)
+            continue
+
+        # Insert a null-byte after each cost fragment that is immediately
+        # followed by the start of another item.  The lookahead requires an
+        # uppercase letter or digit -- Necromunda item names always start with
+        # uppercase, so this prevents splitting at lowercase prose continuations
+        # such as "worth of weapons" in narrative bullets.
+        segmented = re.sub(
+            r"(\+?\d+\s*credits)\s+(?:[-\u2014\u2013\u2022\*\u2019]\s*)?(?=[A-Z\d])",
+            r"\1" + _SPLIT_SEP,
+            stripped,
+            flags=re.I,
+        )
+        parts = [p.strip() for p in segmented.split(_SPLIT_SEP) if p.strip()]
+        for idx, part in enumerate(parts):
+            if idx == 0:
+                # Preserve the original "- " prefix if present.
+                if stripped.startswith("- ") and not part.startswith("- "):
+                    split_lines.append("- " + part)
+                else:
+                    split_lines.append(part)
+            else:
+                # Strip any stray bullet/dash that survived the split, re-prefix.
+                clean = re.sub(r"^[-\u2014\u2013\u2022\*\u2019]\s*", "", part).strip()
+                split_lines.append("- " + clean)
+
+    lines = split_lines
+
+    # -------------------------------------------------------------------
+    # Pass 2 -- Join split-mid-word continuations (Halls of the Ancients).
+    #
+    # For a pair (B1, B2) of bullet lines separated by at most one blank:
+    #   - B1 has no dotted leader AND no _EQUIP_COST match (incomplete name)
+    #   - B2 stripped of "- " starts with [a-z*] (continuation, not new item)
+    #   - The joined line would satisfy _EQUIP_COST at its end
+    # Only join when all three conditions hold; otherwise leave intact.
+    # -------------------------------------------------------------------
+    joined: List[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.rstrip()
+
+        if not stripped.startswith("- "):
+            joined.append(line)
+            i += 1
+            continue
+
+        content1 = stripped[2:]  # content after "- "
+        # B1 must have no dotted leader and no complete end-of-line cost.
+        if _DOTTED_LEADER.search(content1) or _EQUIP_COST.search(stripped):
+            joined.append(line)
+            i += 1
+            continue
+
+        # Look ahead past at most one blank line for B2.
+        j = i + 1
+        if j < len(lines) and not lines[j].rstrip():
+            j += 1  # skip one blank
+        if j >= len(lines):
+            joined.append(line)
+            i += 1
+            continue
+
+        b2 = lines[j].rstrip()
+        if not b2.startswith("- "):
+            joined.append(line)
+            i += 1
+            continue
+
+        content2 = b2[2:]
+        # B2 must start with lowercase or '*' (mid-word continuation).
+        if not content2 or not (content2[0].islower() or content2[0] == "*"):
+            joined.append(line)
+            i += 1
+            continue
+
+        # Only join when the merged result would end with a valid cost.
+        merged = "- " + content1.strip() + " " + content2.strip()
+        if _EQUIP_COST.search(merged.rstrip()):
+            joined.append(merged)
+            i = j + 1  # consume B1, optional blank, and B2
+        else:
+            joined.append(line)
+            i += 1
+
+    lines = joined
+
+    # -------------------------------------------------------------------
+    # Pass 3 -- Normalize.
+    #
+    # Strip dotted leaders (\.{3,} -> single space), strip stray "• " bullet
+    # characters inside item names, collapse interior whitespace.
+    # Blank lines, table rows, and headings pass through untouched.
+    # Bare (non-"- ") lines are promoted to bullets ONLY if they carry a
+    # dotted leader (strong equipment-item signal).
+    # -------------------------------------------------------------------
+    normalized: List[str] = []
+    for line in lines:
+        stripped = line.rstrip()
+        if not stripped:
+            normalized.append(line)
+            continue
+        if stripped.startswith("|") or stripped.startswith("#"):
+            normalized.append(line)
+            continue
+        if stripped.startswith("- "):
+            content = stripped[2:]
+            content = _EQUIP_BULLET.sub("", content)
+            content = _DOTTED_LEADER.sub(" ", content)
+            content = _INNER_SPACES.sub(" ", content).strip()
+            normalized.append("- " + content)
+        else:
+            # Bare line: only promote to "- " bullet when a dotted leader is
+            # present (avoids corrupting narrative paragraphs).
+            if _DOTTED_LEADER.search(stripped):
+                clean = _DOTTED_LEADER.sub(" ", stripped)
+                clean = _INNER_SPACES.sub(" ", clean).strip()
+                if clean:
+                    normalized.append("- " + clean)
+            else:
+                normalized.append(line)
+
+    lines = normalized
+
+    # -------------------------------------------------------------------
+    # Pass 4 -- Tablify qualifying bullet blocks.
+    #
+    # Collect consecutive runs of "- " lines.  A run is converted to a
+    # ``| Item | Cost |`` table ONLY when every line in it ends with an
+    # anchored cost (_EQUIP_COST).  A run containing any line where
+    # "credits" appears mid-sentence is left entirely as-is -- this protects
+    # house favours, sub-plots, scenario roll-tables, and any other narrative
+    # bullet lists that mention credits.
+    #
+    # Upgrade lines (cost starts with "+") become "| — Name | +cost |" rows.
+    # -------------------------------------------------------------------
+    out: List[str] = []
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        stripped = line.rstrip()
+
+        if not stripped.startswith("- "):
+            out.append(line)
+            i += 1
+            continue
+
+        # Collect the full consecutive bullet run.
+        run: List[str] = []
+        j = i
+        while j < len(lines) and lines[j].rstrip().startswith("- "):
+            run.append(lines[j].rstrip())
+            j += 1
+
+        if not run:
+            out.append(line)
+            i += 1
+            continue
+
+        # Guard: every line must end with an anchored cost.
+        if not all(_EQUIP_COST.search(r) for r in run):
+            out.extend(run)
+            i = j
+            continue
+
+        # All lines qualify -> emit as a markdown table.
+        if out and out[-1] != "":
+            out.append("")
+        out.append("| Item | Cost |")
+        out.append("|---|---|")
+        for bullet in run:
+            content = bullet[2:].rstrip()  # strip leading "- "
+            m = _EQUIP_COST.search(content)
+            cost_str = m.group(1) + " " + m.group(2)
+            item = content[: m.start()].strip()
+            if m.group(1).startswith("+"):
+                out.append(f"| \u2014 {item} | {cost_str} |")
+            else:
+                out.append(f"| {item} | {cost_str} |")
+        out.append("")
+        i = j
+
+    result = "\n".join(out)
+    return _BLANK_RUN.sub("\n\n", result)
 
 
 # --- Wrapped table-row merging (opt-in) ------------------------------------

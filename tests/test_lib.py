@@ -26,6 +26,7 @@ from lib.text import (  # noqa: E402
     apply_heading_space_map,
     normalize_body,
     reformat_stat_profiles,
+    reformat_equipment_lists,
     merge_wrapped_table_rows,
     promote_header_below_separator,
     promote_demoted_label_row,
@@ -545,6 +546,108 @@ class TestReformatStatProfiles(unittest.TestCase):
             _profile_header(_FIGHTER_COLS).pattern,
             r"\*{0,2}\s*M\s+WS\s+BS\s+S\s+T\s+W\s+I\s+A\s+Ld\s+Cl\s+Wil\s+Int\s*\*{0,2}",
         )
+
+
+class TestReformatEquipmentLists(unittest.TestCase):
+    """Unit tests for reformat_equipment_lists (Necromunda equipment normalizer)."""
+
+    def _table_rows(self, text):
+        return [ln for ln in text.split("\n") if ln.startswith("|")]
+
+    def test_simple_dotted_leader(self):
+        inp = (
+            "- Autogun......................... 15 credits\n"
+            "- Boltgun.......................... 55 credits"
+        )
+        out = reformat_equipment_lists(inp)
+        rows = self._table_rows(out)
+        self.assertEqual(rows[0], "| Item | Cost |")
+        self.assertIn("| Autogun | 15 credits |", rows)
+        self.assertIn("| Boltgun | 55 credits |", rows)
+        self.assertNotIn("...", out)
+
+    def test_upgrade_sub_row(self):
+        inp = (
+            "- Boltgun.......................... 55 credits\n"
+            "- Master-crafted .......+15 credits"
+        )
+        out = reformat_equipment_lists(inp)
+        rows = self._table_rows(out)
+        self.assertIn("| Boltgun | 55 credits |", rows)
+        # Upgrade gets em-dash prefix.
+        self.assertIn("| \u2014 Master-crafted | +15 credits |", rows)
+
+    def test_inline_merge_split(self):
+        # pymupdf4llm fuses two adjacent-column items onto one line.
+        inp = "- Bolt pistol......................45 credits - Master-crafted .......+10 credits"
+        out = reformat_equipment_lists(inp)
+        rows = self._table_rows(out)
+        self.assertIn("| Bolt pistol | 45 credits |", rows)
+        self.assertIn("| \u2014 Master-crafted | +10 credits |", rows)
+        self.assertEqual(len([r for r in rows if r.startswith("| Item")]), 1)
+
+    def test_hota_bare_line_split(self):
+        # Halls of the Ancients: two items on one bare (non-"- ") line.
+        inp = "Ironhead autogun ........25 credits Ironhead boltgun .........95 credits"
+        out = reformat_equipment_lists(inp)
+        rows = self._table_rows(out)
+        self.assertIn("| Ironhead autogun | 25 credits |", rows)
+        self.assertIn("| Ironhead boltgun | 95 credits |", rows)
+
+    def test_hota_continuation_join(self):
+        # Halls of the Ancients: item name split mid-word across two "- " bullets.
+        inp = (
+            "- Ironhead heavy\n\n"
+            "- flamer*.......................210 credits Ironhead heavy\n\n"
+            "- stubber*.....................140 credits"
+        )
+        out = reformat_equipment_lists(inp)
+        rows = self._table_rows(out)
+        self.assertIn("| Ironhead heavy flamer* | 210 credits |", rows)
+        self.assertIn("| Ironhead heavy stubber* | 140 credits |", rows)
+
+    def test_narrative_bullet_not_tablified(self):
+        # A bullet mentioning "credits" mid-sentence must never be tablified.
+        inp = (
+            "- 6-8 Scrap Shipment: The gang receives 2D6x10 credits worth of "
+            "weapons and Wargear chosen from the list."
+        )
+        out = reformat_equipment_lists(inp)
+        self.assertEqual(out.strip(), inp.strip())
+        self.assertNotIn("|", out)
+
+    def test_idempotent(self):
+        inp = (
+            "- Autogun......................... 15 credits\n"
+            "- Boltgun.......................... 55 credits\n"
+            "- Master-crafted .......+15 credits"
+        )
+        once = reformat_equipment_lists(inp)
+        twice = reformat_equipment_lists(once)
+        self.assertEqual(once, twice)
+
+    def test_no_credits_returns_unchanged(self):
+        inp = "Some text without the magic word.\n\nAnother paragraph."
+        self.assertEqual(reformat_equipment_lists(inp), inp)
+
+    def test_existing_table_row_untouched(self):
+        inp = "| Item | Cost |\n|---|---|\n| Autogun | 15 credits |"
+        out = reformat_equipment_lists(inp)
+        self.assertEqual(out.strip(), inp.strip())
+
+    def test_emitted_table_passes_tables_gate(self):
+        inp = (
+            "- Autogun......................... 15 credits\n"
+            "- Boltgun.......................... 55 credits\n"
+            "- Master-crafted .......+15 credits"
+        )
+        out = reformat_equipment_lists(inp)
+        with tempfile.TemporaryDirectory() as tmp:
+            with open(os.path.join(tmp, "s.md"), "w", encoding="utf-8") as fh:
+                fh.write(out + "\n")
+            fails: list = []
+            verify_vault.check_tables(tmp, ["s.md"], fails)
+            self.assertEqual(fails, [], f"emitted table tripped tables gate: {fails}")
 
 
 class TestReformatVehicleProfiles(unittest.TestCase):
