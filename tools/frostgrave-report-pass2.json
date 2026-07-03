@@ -1,0 +1,18 @@
+[
+  {
+    "file": "12-appendix/12.03-the-wizard-sheet/12.03-the-wizard-sheet.md",
+    "diff": [
+      "--- a/12-appendix/12.03-the-wizard-sheet/12.03-the-wizard-sheet.md",
+      "+++ b/12-appendix/12.03-the-wizard-sheet/12.03-the-wizard-sheet.md",
+      "@@ -33,7 +33,7 @@",
+      " |Items (max 4)||||||Notes|",
+      " ||||||||",
+      " ",
+      "-Home Base The Vault The Treasury (gc) **This ebook belongs to Tim De Rop (tim.de.rop@gmail.com), purchased** ",
+      "+Home Base The Vault The Treasury (gc)  ",
+      " ",
+      " 215 ",
+      " "
+    ]
+  }
+]
