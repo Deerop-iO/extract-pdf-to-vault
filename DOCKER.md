@@ -310,19 +310,44 @@ the chosen runtime.
 
 ## Updating the image
 
-When a new kit version is released:
+After `git pull`, check whether the image needs a rebuild. The container runs
+`python /app/scripts/…` from files **baked in at build time** — not from your
+working copy on disk. A pull that only updates docs does nothing to the running
+image until you rebuild.
+
+**Rebuild when any of these changed:**
+
+| Path | Why |
+|---|---|
+| `templates/scripts/` | Pipeline code (`extract.py`, `lib/`, etc.) lives in the image |
+| `templates/requirements.txt` | Python dependencies are installed at build time |
+| `Dockerfile` or `docker-entrypoint.sh` | Image layout or entrypoint |
+
+**No rebuild needed:**
+
+| Path | Why |
+|---|---|
+| `README.md`, `docs/`, `.cursor/`, agent skills | Not copied into the image |
+| `pipeline.config.json` | Read from your mounted project via `--config` |
+| Vault output, `.p2v/` manifests | Runtime data on the mount |
 
 ```bash
 cd extract-pdf-to-vault
 git pull
+docker build -t p2v .
+```
+
+When a release tag exists, you can pin before rebuilding:
+
+```bash
 git checkout v1.0.1   # or latest tag
 docker build -t p2v .
 ```
 
-Rebuild is required only when `templates/requirements.txt` or `Dockerfile`
-changes. Config and workflow changes in the repo do not require a rebuild unless
-you rely on scripts baked into the image (the project folder’s copied `scripts/`
-are used only on the Python path; Docker uses `/app/scripts/` inside the image).
+If you scaffolded a project with `/p2v-start-project`, the copied `scripts/` folder
+on disk is for **Python** runs only. Docker always uses `/app/scripts/` inside
+the image — rebuild after script changes even if your project folder already has
+newer files from a manual copy.
 
 ---
 

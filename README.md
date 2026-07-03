@@ -110,8 +110,9 @@ PDF has figures worth keeping.
 
 **Option B — Docker (no Python install needed):** Docker Desktop installed and
 running. Build the image once from the kit folder: `docker build -t p2v .` —
-then use `docker-run.sh` for every pipeline command. See [`DOCKER.md`](DOCKER.md)
-for the full installation and usage guide.
+then use `docker-run.sh` for every pipeline command. After `git pull`, rebuild
+when `templates/scripts/`, `templates/requirements.txt`, or `Dockerfile` changed
+(see [`DOCKER.md`](DOCKER.md)). Config and docs updates do not require a rebuild.
 
 ## Status
 
