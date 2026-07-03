@@ -67,6 +67,42 @@ Optional post-build (same slash commands in Cursor and Claude Code):
   (`enriched` tier).
 - `/p2v-repair-document` — guard-gated table/index layout repair (tier-neutral).
 
+## Extracting images
+
+Image extraction is **off by default**. Most PDFs repeat decorative elements
+(logos, running headers) that add little value; enable it only when figures,
+diagrams, or screenshots carry real content.
+
+**Config** (`pipeline.config.json` after `/p2v-start-project`):
+
+```json
+"write_images": true
+```
+
+Or per PDF via the `sources` map:
+
+```json
+"sources": {
+  "my-book-slug": { "write_images": true }
+}
+```
+
+**CLI** (one-off override):
+
+```bash
+python scripts/extract.py path/to/book.pdf --write-images
+```
+
+With Docker, add `--write-images` to the extract command — see [`DOCKER.md`](DOCKER.md).
+
+When enabled, `extract.py` stages images under `.p2v/` and the manifest carries
+portable `ASSET:` references; `build_vault.py` copies them into each book's
+`assets/` folder and resolves note-relative paths. `verify_vault.py` fails the
+build if a note references a missing image.
+
+When using `/p2v-build-document`, ask the agent to pass `--write-images` if the
+PDF has figures worth keeping.
+
 ## Requirements
 
 **Option A — Python:** Python 3.10+ and `pip install -r templates/requirements.txt`
